@@ -1,0 +1,97 @@
+<div id="container" class="container-fluid w-75">
+    <div class="row">
+
+        <!-- VIDEO -->
+        <div id="div-col-video" class="text-center" :class="wide_chat ? 'col-4' : 'col-9'">
+            
+            <!-- CONOTAINER VIDEO -->
+            <div id="videosContainer" class="position-relative d-inline-block w-100">
+                <video id="videoRemote" class="w-100" autoplay></video>
+                <div id="div-local-video">
+                    <video class="w-100" id="videoLocal" autoplay muted="muted"></video>
+                </div>
+            </div>
+            
+            <!-- CONTROLS VIDEO -->
+            <div class="d-flex justify-content-between my-1">
+                <div class="btn-group btn-group-toggle col-1 px-0" data-toggle="buttons">                    
+                    <label
+                        class="btn btn-outline-secondary"
+                        @click="change_stream_mode('audio')"
+                        :class="local_stream_mode == 'audio' ? 'active' : ''"
+                    >
+                        <input type="radio">
+                        <i class="fa fa-phone" aria-hidden="true"></i>
+                    </label>
+                    <label
+                        class="btn btn-outline-secondary"
+                        @click="change_stream_mode('video')"
+                        :class="local_stream_mode == 'video' ? 'active' : ''"
+                    >
+                        <input type="radio">
+                        <i class="fas fa-video" aria-hidden="true"></i>
+                    </label>
+                    <label
+                        class="btn btn-outline-secondary"
+                        @click="change_stream_mode('screen')"
+                        :class="local_stream_mode == 'screen' ? 'active' : ''"
+                    >
+                        <input type="radio">
+                        <i class="fa fa-desktop" aria-hidden="true"></i>
+                    </label>
+                </div>
+                <button class="btn btn-danger col-2 col-lg-3" @click="end_call">
+                    <i id="end-call-button" class="fa fa-phone" aria-hidden="true"></i>
+                </button>
+                <button class="btn btn-secondary col-1" @click="set_full_screen" title="Full Screen" :disabled="remote_stream_mode == 'audio'">
+                    <i class="fa fa-arrows-alt" aria-hidden="true"></i>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- CHAT -->
+        <div id="div-col-chat" class="d-flex flex-column" :class="wide_chat ? 'col-8' : 'col-3'">
+            
+            <!-- HEADER -->
+            <div v-if="remote_peer_name != ''" class="d-flex my-2 pb-3 border-bottom border-secondary">
+                <button class="btn btn-primary mr-2" @click="wide_chat = !wide_chat">
+                    <i v-if="wide_chat" class="fas fa-long-arrow-alt-right"></i>
+                    <i v-else class="fas fa-long-arrow-alt-left"></i>
+                </button>
+                <div>
+                    You are talking to {{ remote_peer_name }}.
+                </div>
+            </div>
+            
+            <!-- MESSAGES -->
+            <div id="chat-messages">
+                <div v-for="m in messages" class="out-div-message w-100 my-1 px-2"
+                    :class="[m.sender_id == peer.id ? 'right' : 'left', m.detail.code ? 'code' : '']">
+                    <div class="in-div-message" :class="m.sender_id == peer.id ? 'float-right' : 'float-left' ">
+                        <pre v-if="m.detail.code" class="mb-0"><code data-language="python">{{ m.detail.message }}</code></pre>
+                        <p v-else class="w-100" v-html="m.detail.message"></p>
+                    </div>
+                </div>    
+            </div>
+            
+            <!-- INPUT AND BUTTONS -->
+            <div id="chat-input-div" class="mt-auto pt-1">
+                <textarea id="chat-input" v-model="input_message" class="form-control" @keyup.enter.ctrl="send_input_message(false)" ></textarea>
+                <div class="row my-2">
+                    <div class="col-6">
+                        <button class="btn btn-primary w-100" @click="send_input_message(false)" :disabled="input_message == ''" title="Send as Text" >
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-primary w-100" @click="send_input_message(true)" :disabled="input_message == ''" title="Send as Python code">
+                            <i class="fas fa-code"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

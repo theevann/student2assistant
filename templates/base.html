@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="%% url_for('static', filename='style.css') %%"
+    />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/rainbow/1.2.0/themes/monokai.min.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.css">
+<title>Peer to Peer call with assistants</title>
+</head>
+<body>
+	
+	<canvas id="canvas" width="150" height="150"></canvas>
+	<div id="vue-app">
+
+		<div class="d-flex justify-content-center my-3">
+            {% block title %}{% endblock %}
+		</div>
+		
+      	<div v-if="!peer.id">
+			<div class="d-flex justify-content-center">
+				<h3 class="mt-4">Connecting to peer server...</h3>
+			</div>
+			<div class="d-flex justify-content-center">
+				<div class="spinner-border mt-4" role="status"></div>
+			</div>
+        </div>
+        
+        <div v-else v-cloak>
+
+            <div v-if="!in_call">
+                {% block registration %}{% endblock %}
+            </div>
+
+            <div v-else>
+                {% include 'video_chat.html' %}
+            </div>
+
+		</div>
+    </div>
+    </body>
+    <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rainbow/1.2.0/js/rainbow.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rainbow/1.2.0/js/language/generic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rainbow/1.2.0/js/language/python.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap-notify@3.1.3/bootstrap-notify.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sanitize-html@1.22.1/dist/sanitize-html.min.js"></script>
+    <script src="%% url_for('static', filename='js/peer_mixin.js') %%"></script>
+    {% block script %}{% endblock %}
+</html>
