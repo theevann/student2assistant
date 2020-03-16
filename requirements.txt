@@ -1,0 +1,6 @@
+flask
+flask-migrate
+flask-sqlalchemy
+flask_httpauth
+pytest
+easydict
