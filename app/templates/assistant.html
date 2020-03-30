@@ -1,0 +1,92 @@
+{% extends "video_chat.html" %}
+
+
+{% block title %}
+	<h1>Assistant View</h1>
+{% endblock %}
+
+
+{% block before_call %}
+	<div class="col-9 mx-auto mb-5">
+		<h3>You are connected to a student</h3>
+    </div>
+    <div class="col-9 col-md-7 col-lg-5 mx-auto my-4">
+        <button class="btn btn-warning w-100" @click="end_call">End Connection</button>
+    </div>
+{% endblock %}
+
+{% block registration %}
+	<div class="container">
+		<div v-if="!registered">
+
+			<div class="row my-2 justify-content-center">
+				<div class="col-8 col-lg-4 input-group">
+					<div class="input-group-prepend">
+						<span class="input-group-text">Name</span>
+					</div>
+					<input v-model="name" type="text" class="form-control" placeholder="Your name" aria-label="name" >
+				</div>
+			</div>
+
+			<div class="row my-2 justify-content-center">
+				<div class="col-8 col-lg-4 input-group">
+					<div class="input-group-prepend">
+						<span class="input-group-text">Zoom id</span>
+					</div>
+					<input v-model="zoom_id" type="text" class="form-control" placeholder="Optionnal" aria-label="name" >
+				</div>
+			</div>
+			
+			<div class="row my-2 justify-content-center">
+				<div class="col-8 col-lg-4 input-group">
+					<div class="input-group-prepend">
+						<span class="input-group-text">Room Password</span>
+					</div>
+					<input v-model="password" type="password" class="form-control" placeholder="Password" aria-label="name" @keyup.enter="login" >
+				</div>
+			</div>
+
+			<div class="row my-2 justify-content-center">
+				<div class="col-8 col-lg-4">
+					<button class="btn btn-primary w-100" @click="login">Log in</button>
+				</div>
+			</div>
+
+		</div>
+
+
+		<div v-else>
+			<!-- CONNECTION STATUS -->
+			<div class="row my-2 justify-content-center">
+				<div class="col-8 col-lg-4 input-group">
+					<div class="input-group-prepend">
+						<span class="input-group-text">Connection</span>
+					</div>
+					<span class="form-control">{{ ["CONNECTING", "CONNECTED", "NOT CONNECTED"][sourceState] }}</span>
+				</div>
+			</div>
+			
+			<!-- NAME -->
+			<div class="row my-2 justify-content-center">
+				<div class="col-8 col-lg-4 input-group">
+					<div class="input-group-prepend">
+						<span class="input-group-text">Name</span>
+					</div>
+					<span class="form-control">{{ name }}</span>
+				</div>
+			</div>
+			<div class="row my-2 justify-content-center">
+				<div class="col-8 col-lg-4">
+					<button v-if="status == 'free'" class="btn btn-warning w-100" @click="update_status('busy')">Set status to Busy</button>
+					<button v-else class="btn btn-success w-100" @click="update_status('free')">Set Status to Available</button>
+				</div>
+			</div>
+		</div>
+		
+	</div>
+{% endblock %}
+
+
+{% block script %}
+	<script src="%% url_for('static', filename='js/assistant.js') %%"></script>
+{% endblock %}

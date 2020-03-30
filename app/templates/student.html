@@ -1,0 +1,91 @@
+{% extends "video_chat.html" %}
+
+
+{% block title %}
+	<h1>Talk live with a teaching assistant</h1>
+{% endblock %}
+
+{% block before_call %}
+    <div class="col-9 mx-auto mb-5">
+		<h3>You are connected to an assistant</h3>
+    </div>
+    <div class="col-9 col-md-7 col-lg-5 mx-auto my-4">
+        <a v-if="remote_zoom_id" class="btn btn-primary w-100" role="button" target="_blank" :href="'https://zoom.us/s/' + remote_zoom_id">Call on Zoom</a>
+    </div>
+    <div class="col-9 col-md-7 col-lg-5 mx-auto my-4">
+        <button class="btn btn-primary w-100" @click="launch_call(remote_peer_id)">Call in Browser</button>
+    </div>
+    <div class="col-9 col-md-7 col-lg-5 mx-auto my-4">
+        <button class="btn btn-warning w-100" @click="end_call">End Connection</button>
+    </div>
+{% endblock %}
+
+
+{% block registration %}
+    <div class="container">
+
+        <!-- DISCLAIMER BANNER -->
+        <div class="row my-2 justify-content-center">
+
+            <div class="col-2">
+                <img class="w-100" src="%% url_for('static', filename='assets/logo_idiap.png') %%" alt="logo_idiap">
+            </div>
+
+            <div class="col-8 col-lg-6">
+                <div class="alert alert-primary" role="alert">
+                    This platform is an early prototype initially developed for the lab sessions of the EPFL course <a href="https://fleuret.org/ee559/" class="alert-link">EE-559</a>,
+                    following the decision of the school to move courses online.
+                </div>
+            </div>
+
+            <div class="col-2">
+                <img  class="w-100" src="%% url_for('static', filename='assets/logo_epfl.png') %%" alt="logo_epfl">
+            </div>
+
+        </div>
+
+        <!-- CONNECTION STATUS -->
+        <div class="row my-2 justify-content-center">
+            <div class="col-8 col-lg-4 input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Connection</span>
+                </div>
+                <span class="form-control">{{ ["CONNECTING", "CONNECTED", "NOT CONNECTED"][sourceState] }}</span>
+            </div>
+        </div>
+
+        <!-- NAME -->
+        <div class="row my-2 justify-content-center">
+            <div class="col-8 col-lg-4 input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Name</span>
+                </div>
+                <input v-if="!registered" v-model="name" type="text" class="form-control" placeholder="Your name" aria-label="name" >
+                <span v-else class="form-control">{{ name }}</span>
+            </div>
+        </div>
+        
+        <!-- ORDER IN QUEUE -->
+        <div v-if="call_requested" class="row my-2 justify-content-center">
+            <div class="col-8 col-lg-4">
+                <div>
+                    Order in the queue : {{ call_requested ? index : "You did not request a call" }}
+                </div>
+            </div>
+        </div>
+    
+        <!-- BUTTONS -->
+        <div class="row my-2 justify-content-center">
+            <div class="col-8 col-lg-4">
+                <button v-if="call_requested" class="btn btn-danger w-100" @click="cancel_request">Cancel Request</button>
+                <button v-else class="btn btn-primary w-100" @click="request_call">Request Call <i class="fas fa-phone ml-2"></i></button>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+
+
+{% block script %}
+	<script src="%% url_for('static', filename='js/student.js') %%"></script>
+{% endblock %}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="%% url_for('static', filename='style.css') %%"
+    />
+    <title>Peer to Peer call with assistants</title>
+</head>
+<body>
+	
+	<div>
+
+		<div class="d-flex justify-content-center my-3">
+            <h3>Pick a room</h3>
+		</div>
+		
+      	<div>
+              
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    <div class="col-9 col-md-7 col-lg-5 my-4">
+                        <div class="card w-100">
+                            <ul class="list-group list-group-flush">
+                            {% for room in rooms %}
+                                {% if room.name != 'test' %}
+                                    <li class="list-group-item text-uppercase">
+                                        <a href="%%room.name%%">%% room.name %%</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+				<div class="row justify-content-center">
+                    <div class="col-9 col-md-7 col-lg-5">
+                        <a href="test" class="btn btn-secondary" role="button">Test room</a>
+                    </div>
+                </div>
+			</div>
+        </div>
+        
+    </div>
+    </body>
+    <script src="https://unpkg.com/peerjs@1.0.4/dist/peerjs.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</html>

@@ -1,8 +1,8 @@
+import subprocess
 import pytest
 from datetime import datetime, timedelta
 
 from app import create_app
-from models.student_request import StudentRequest
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def client(app):
 
 @pytest.fixture
 def db(app):
-    from models import db
+    from app import db
     with app.app_context():
         db.create_all()
         yield db

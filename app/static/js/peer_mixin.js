@@ -1,4 +1,4 @@
-var ICE_config = {
+const ICE_config = {
     'iceServers': [{
             'urls': 'stun:stun.l.google.com:19302'
         },
@@ -13,15 +13,30 @@ var ICE_config = {
     ]
 }
 
+const call_state = {
+    NOT_IN_CALL: 1,
+    BEFORE_CALL_CALLER: 2,
+    BEFORE_CALL_CALLEE: 2,
+    CALLING_OUT: 3,
+    CALLING_IN: 4,
+    IN_CALL: 5,
+}
 
 var peer_mixin = {
     data: function () {
         return {
             peer: {},
             name: "",
-            room: "ee-559",
+            room: window.location.pathname.split("/")[1],
+            status: "busy",
+            registered: false,
+            call_state: call_state.NOT_IN_CALL,
+            zoom_id: null,
+            source: null,
+            sourceState: 2,
             messages: [],
             remote_peer_id: "",
+            remote_zoom_id: "",
             remote_peer_name: "",
             local_stream_mode: "audio",
             remote_stream_mode: "audio",
@@ -31,23 +46,74 @@ var peer_mixin = {
             video_track: null,
             wide_chat: false,
             canvas: document.createElement('canvas'),
-            audio_ringtone: new Audio('static/assets/notification.mp3'),
+            message_ringtone: new Audio('/static/assets/notification.mp3'), // TODO:
+            match_ringtone: new Audio('/static/assets/notification.mp3'),
+            outgoing_ringtone: new Audio('/static/assets/notification.mp3'),
+            incoming_ringtone: new Audio('/static/assets/notification.mp3'),
         }
     },
     computed: {
         in_call: function () {
-            return this.current_call != null;
+            return this.call_state == call_state.IN_CALL;
+        },
+        not_in_call: function () {
+            return this.call_state == call_state.NOT_IN_CALL;
+        },
+        before_call: function () {
+            return this.call_state == call_state.BEFORE_CALL_CALLER ||
+                this.call_state == call_state.BEFORE_CALL_CALLEE;
         }
     },
     watch: {
         name: function () {
             localStorage.setItem("name", this.name);
         },
+        zoom_id: function () {
+            localStorage.setItem("zoom_id", this.zoom_id);
+        }
     },
     methods: {
+        register_on_server: function (role, password = "") {
+            return $.ajax("/login", {
+                data: JSON.stringify({
+                    peer_id: this.peer.id,
+                    zoom_id: this.zoom_id || null,
+                    password: password,
+                    name: this.name,
+                    room: this.room,
+                    role: role,
+                    status: "busy",
+                }),
+                method: "POST",
+                contentType: "application/json",
+                success: ({error}) => {
+                    if (error == "") {
+                        this.registered = true;
+                        this.init_update_stream();
+                    }
+                }
+            }).promise();
+        },
+        init_update_stream: function () {
+            let source = new EventSource('/updates');
+
+            source.onopen = () => {
+                this.source = source;
+                this.update_source_status();
+            }
+
+            source.onerror = this.update_source_status;
+
+            this.start_update_stream(source);
+        },
+        update_source_status: function () {
+            if (this.source)
+                this.sourceState = this.source.readyState;
+        },
         launch_call: async function (peer_id) {
             console.log("Launching a call");
-            this.audio_ringtone.play();
+            this.outgoing_ringtone.play();
+            this.call_state = call_state.CALLING_OUT;
 
             let local_stream = await this.get_initial_stream();
             let call = this.peer.call(peer_id, local_stream);
@@ -57,7 +123,8 @@ var peer_mixin = {
             if (this.in_call) return;
 
             console.log("Receiving a call");
-            this.audio_ringtone.play();
+            this.incoming_ringtone.play();
+            this.call_state = call_state.CALLING_IN;
 
             this.init_call(call);
             let local_stream = await this.get_initial_stream();
@@ -84,8 +151,11 @@ var peer_mixin = {
             this.local_stream_mode = "audio";
 
             call.on('stream', async (remote_stream) => {
-                console.log("Receiving a stream")
-                document.querySelector("#videoRemote").srcObject = remote_stream;
+                console.log("Receiving a stream");
+                this.call_state = call_state.IN_CALL;
+                this.$nextTick(() => {
+                    document.querySelector("#videoRemote").srcObject = remote_stream;
+                });
 
                 // Multiple draw call for different network speed (best guess)
                 setTimeout(draw, 500);
@@ -161,12 +231,14 @@ var peer_mixin = {
             if (this.current_call && this.current_call.open) {
                 this.current_call.close();
             } else {
+                // If the caller stops the call before the callee answered:
                 // "close" event does not fire if current call is closed before being open
                 console.log("Force clean-up");
                 this.clean_up();
             }
         },
         clean_up: function () {
+            this.call_state = call_state.NOT_IN_CALL;
             // Without timeout, it prevents the sending of end_call message ...
             this.current_chat && setTimeout(this.current_chat.close.bind(this.current_chat), 500);
 
@@ -180,15 +252,23 @@ var peer_mixin = {
             this.remote_stream_mode = "audio";
             this.messages = [];
         },
-        launch_chat: function (peer_id) {
-            let conn = this.peer.connect(peer_id);
-            this.init_chat(conn);
+        launch_chat: function (peer_id, reconnect = false) {
+            let conn = this.peer.connect(peer_id, { "metadata": { "reconnect": reconnect } });
+            // let conn = this.peer.connect(peer_id);
+            this.init_chat(conn, true);
         },
-        init_chat: function (conn) {
+        init_chat: function (conn, initiater = false) {
+            if (!this.not_in_call && !(conn.metadata.reconnect && conn.peer == this.remote_peer_id)) {
+                console.log("abort", conn.metadata.reconnect, conn.peer, this.remote_peer_id)
+                return;
+            }
+
+            this.remote_peer_id = conn.peer;
             this.current_chat = conn;
 
             conn.on('open', () => {
                 console.log("Data connection open");
+                this.call_state = initiater ? call_state.BEFORE_CALL_CALLER : call_state.BEFORE_CALL_CALLEE;
                 this.send_info("peer_name", this.name);
             });
 
@@ -215,12 +295,14 @@ var peer_mixin = {
 
             });
 
-            conn.on('error', (e) => {
-                console.warn("Error on data connection : ", e);
-            });
-
             conn.on('close', () => {
                 console.warn("Data connection closed");
+            });
+
+            conn.on('error', (e) => {
+                console.warn("Error on data connection : ", e);
+                if (initiater)
+                    this.launch_chat(this.remote_peer_id, true)
             });
         },
         send_info: function (key, value) {
@@ -276,28 +358,40 @@ var peer_mixin = {
             message = message.replace(/\n/g, '<br />');
 
             return sanitizeHtml(message, options);
+        },
+        init_peer: function (peer_id = null) {
+            let peer = new Peer(peer_id, {
+                config: ICE_config,
+                host: 'ee-559.com',
+                port: 9000,
+                path: '/peer-server'
+            });
+
+            peer.on('open', (id) => {
+                console.log('Peer Connected with ID : ' + id);
+                sessionStorage.setItem("peer_id", id);
+                this.peer = {};
+                this.peer = peer;
+            });
+
+            peer.on('connection', this.init_chat);
+            peer.on('call', this.receive_call);
+            peer.on('error', (e) => {
+                console.error("! Fatal !\n Error on Peer connection:", e);
+                this.peer.destroy();
+                setTimeout(this.init_peer, 5000);
+            });
+
+            return peer;
         }
     },
     created: function () {
         this.name = localStorage.getItem("name") || "";
+        this.zoom_id = localStorage.getItem("zoom_id") || null;
         let peer_id = sessionStorage.getItem("peer_id") || null;
 
-        let peer = this.peer = new Peer(peer_id, {
-            config: ICE_config
-        });
-
-        this.peer.on('open', (id) => {
-            console.log('Peer Connected with ID : ' + id);
-            sessionStorage.setItem("peer_id", id);
-            this.peer = {}
-            this.peer = peer;
-        });
-
-        this.peer.on('connection', this.init_chat);
-        this.peer.on('call', this.receive_call);
-        this.peer.on('error', (e) => {
-            console.error("! Fatal !\n Error on Peer connection:", e);
-        });
+        this.peer = this.init_peer(peer_id);
+        setInterval(this.update_source_status, 2000);
     }
 };
 

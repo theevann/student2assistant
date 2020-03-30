@@ -1,3 +1,24 @@
+.connection-status {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    position: absolute;
+    top: 23px;
+    left: 23px;
+}
+
+.connection-status.connected {
+    background-color: #62bd19;
+}
+
+.connection-status.connecting {
+    background-color: #f7ce1a;
+}
+
+.connection-status.not-connected {
+    background-color: #e90808;
+}
+
 #videoRemote {
     border: 7px #333 solid;
     max-width: 100%;

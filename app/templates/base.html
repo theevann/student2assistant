@@ -28,7 +28,7 @@
             {% block title %}{% endblock %}
 		</div>
 		
-      	<div v-if="!peer.id">
+      	<div v-if="!peer.open">
 			<div class="d-flex justify-content-center">
 				<h3 class="mt-4">Connecting to peer server...</h3>
 			</div>
@@ -39,12 +39,12 @@
         
         <div v-else v-cloak>
 
-            <div v-if="!in_call">
+            <div v-if="not_in_call">
                 {% block registration %}{% endblock %}
             </div>
 
             <div v-else>
-                {% include 'video_chat.html' %}
+                {% block video_chat %}{% endblock %}
             </div>
 
 		</div>
