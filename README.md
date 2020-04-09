@@ -19,5 +19,5 @@ The install-instructions of this repo have not been tested.
 - Create and seed db: `python3 db.py seed`
 
 # Starting server
-- Start redis-server
+- Start redis-server (with `redis-server redis.conf` where redis.conf is your redis configuration file)
 - Start flask server with `python3 run.py` or use gunicorn with `gunicorn -k gevent -w 4 -b localhost:8000 run:app`
