@@ -10,7 +10,7 @@
 		<h3>You are connected to an assistant</h3>
     </div>
     <div class="col-9 col-md-7 col-lg-5 mx-auto my-4">
-        <a v-if="remote_zoom_id" class="btn btn-primary w-100" role="button" target="_blank" :href="'https://zoom.us/s/' + remote_zoom_id">Call on Zoom</a>
+        <a v-if="remote_zoom_id" class="btn btn-primary w-100" role="button" target="_blank" :href="'https://zoom.us/j/' + remote_zoom_id">Call on Zoom (prefered)</a>
     </div>
     <div class="col-9 col-md-7 col-lg-5 mx-auto my-4">
         <button class="btn btn-primary w-100" @click="launch_call(remote_peer_id)">Call in Browser</button>
@@ -78,7 +78,11 @@
         <div class="row my-2 justify-content-center">
             <div class="col-8 col-lg-4">
                 <button v-if="call_requested" class="btn btn-danger w-100" @click="cancel_request">Cancel Request</button>
-                <button v-else class="btn btn-primary w-100" @click="request_call">Request Call <i class="fas fa-phone ml-2"></i></button>
+                <button v-else-if="call_requesting" class="btn btn-primary w-100" disabled>
+                    <span class="spinner-border spinner-border-sm"></span>
+                        Requesting call
+                </button>
+                <button v-else class="btn btn-primary w-100" @click="request_call" :disabled="name == ''">Request Call <i class="fas fa-phone ml-2"></i></button>
             </div>
         </div>
 

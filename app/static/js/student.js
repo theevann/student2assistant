@@ -5,6 +5,7 @@ var app = new Vue({
     mixins: [peer_mixin],
     data: {
         request_id: null,
+        call_requesting: false,
         index: null,
         input_message: "",
     },
@@ -27,12 +28,13 @@ var app = new Vue({
 
                 this.request_id = null;
                 this.launch_chat(this.remote_peer_id);
-                console.log("match_request");
             });
         },
         request_call: async function () {
             if (this.name == "")
                 return;
+
+            this.call_requesting = true; 
 
             if (!this.registered)
                 await this.register_on_server("student");
@@ -51,27 +53,10 @@ var app = new Vue({
                 },
                 error: (e) => {
                     console.error("Error: ", e);
-                }
+                },
+                complete: () => this.call_requesting = false
             });
 
-        },
-        get_request_status: function () {
-            $.get("/queue/", {
-                user_id: this.user_id,
-                request_id: this.request_id,
-            }).done(({
-                index,
-                assistant_id
-            }) => {
-                this.index = index;
-                if (assistant_id) {
-                    console.log("Got an assistant id:", assistant_id);
-                    this.launch_call(assistant_id);
-                    this.launch_chat(assistant_id);
-                    this.request_id = null;
-                    this.index = null;
-                }
-            });
         },
         cancel_request: function () {
             $.ajax("/request", {

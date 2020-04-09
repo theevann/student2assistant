@@ -15,11 +15,12 @@ const ICE_config = {
 
 const call_state = {
     NOT_IN_CALL: 1,
-    BEFORE_CALL_CALLER: 2,
-    BEFORE_CALL_CALLEE: 2,
-    CALLING_OUT: 3,
-    CALLING_IN: 4,
-    IN_CALL: 5,
+    CONNECTING: 2,
+    BEFORE_CALL_CALLER: 3,
+    BEFORE_CALL_CALLEE: 4,
+    CALLING_OUT: 5,
+    CALLING_IN: 6,
+    IN_CALL: 7,
 }
 
 var peer_mixin = {
@@ -31,7 +32,7 @@ var peer_mixin = {
             status: "busy",
             registered: false,
             call_state: call_state.NOT_IN_CALL,
-            zoom_id: null,
+            zoom_id: "",
             source: null,
             sourceState: 2,
             messages: [],
@@ -56,13 +57,19 @@ var peer_mixin = {
         in_call: function () {
             return this.call_state == call_state.IN_CALL;
         },
-        not_in_call: function () {
-            return this.call_state == call_state.NOT_IN_CALL;
+        calling_out: function () {
+            return this.call_state == call_state.CALLING_OUT;
         },
         before_call: function () {
             return this.call_state == call_state.BEFORE_CALL_CALLER ||
-                this.call_state == call_state.BEFORE_CALL_CALLEE;
-        }
+            this.call_state == call_state.BEFORE_CALL_CALLEE;
+        },
+        connecting: function () {
+            return this.call_state == call_state.CONNECTING;
+        },
+        not_in_call: function () {
+            return this.call_state == call_state.NOT_IN_CALL;
+        },
     },
     watch: {
         name: function () {
@@ -77,7 +84,7 @@ var peer_mixin = {
             return $.ajax("/login", {
                 data: JSON.stringify({
                     peer_id: this.peer.id,
-                    zoom_id: this.zoom_id || null,
+                    zoom_id: this.zoom_id.replace(/-|\s/g, "") || null,
                     password: password,
                     name: this.name,
                     room: this.room,
@@ -253,13 +260,13 @@ var peer_mixin = {
             this.messages = [];
         },
         launch_chat: function (peer_id, reconnect = false) {
+            this.call_state = call_state.CONNECTING;
             let conn = this.peer.connect(peer_id, { "metadata": { "reconnect": reconnect } });
-            // let conn = this.peer.connect(peer_id);
             this.init_chat(conn, true);
         },
         init_chat: function (conn, initiater = false) {
-            if (!this.not_in_call && !(conn.metadata.reconnect && conn.peer == this.remote_peer_id)) {
-                console.log("abort", conn.metadata.reconnect, conn.peer, this.remote_peer_id)
+            if (!(this.not_in_call || this.connecting) && !(conn.metadata.reconnect && conn.peer == this.remote_peer_id)) {
+                console.log("Abort chat initialization", conn.metadata.reconnect, conn.peer, this.remote_peer_id)
                 return;
             }
 
@@ -360,18 +367,21 @@ var peer_mixin = {
             return sanitizeHtml(message, options);
         },
         init_peer: function (peer_id = null) {
-            let peer = new Peer(peer_id, {
-                config: ICE_config,
-                host: 'ee-559.com',
-                port: 9000,
-                path: '/peer-server'
-            });
+            let peer = location.hostname == "localhost" ? 
+                new Peer(peer_id) :
+                new Peer(peer_id, {
+                    config: ICE_config,
+                    host: 'ee-559.com',
+                    port: 443,
+                    path: '/peer-server'
+                });
 
             peer.on('open', (id) => {
                 console.log('Peer Connected with ID : ' + id);
                 sessionStorage.setItem("peer_id", id);
                 this.peer = {};
                 this.peer = peer;
+                this.call_state = call_state.NOT_IN_CALL;
             });
 
             peer.on('connection', this.init_chat);
@@ -387,7 +397,7 @@ var peer_mixin = {
     },
     created: function () {
         this.name = localStorage.getItem("name") || "";
-        this.zoom_id = localStorage.getItem("zoom_id") || null;
+        this.zoom_id = localStorage.getItem("zoom_id") || "";
         let peer_id = sessionStorage.getItem("peer_id") || null;
 
         this.peer = this.init_peer(peer_id);

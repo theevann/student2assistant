@@ -17,6 +17,8 @@
 
 {% block registration %}
 	<div class="container">
+
+		<!-- BEFORE LOGIN -->
 		<div v-if="!registered">
 
 			<div class="row my-2 justify-content-center">
@@ -33,7 +35,7 @@
 					<div class="input-group-prepend">
 						<span class="input-group-text">Zoom id</span>
 					</div>
-					<input v-model="zoom_id" type="text" class="form-control" placeholder="Optionnal" aria-label="name" >
+					<input v-model="zoom_id" type="text" class="form-control" placeholder="Optional" aria-label="name" >
 				</div>
 			</div>
 			
@@ -48,13 +50,13 @@
 
 			<div class="row my-2 justify-content-center">
 				<div class="col-8 col-lg-4">
-					<button class="btn btn-primary w-100" @click="login">Log in</button>
+					<button class="btn btn-primary w-100" @click="login" :disabled="name == ''">Log in</button>
 				</div>
 			</div>
 
 		</div>
-
-
+		
+		<!-- AFTER LOGIN -->
 		<div v-else>
 			<!-- CONNECTION STATUS -->
 			<div class="row my-2 justify-content-center">
@@ -75,11 +77,62 @@
 					<span class="form-control">{{ name }}</span>
 				</div>
 			</div>
+
+			<!-- STATUS BUTTON -->
 			<div class="row my-2 justify-content-center">
 				<div class="col-8 col-lg-4">
 					<button v-if="status == 'free'" class="btn btn-warning w-100" @click="update_status('busy')">Set status to Busy</button>
 					<button v-else class="btn btn-success w-100" @click="update_status('free')">Set Status to Available</button>
 				</div>
+			</div>
+
+			<div v-if="zoom_id" class="row mt-5 justify-content-center">
+				<div class="col-8 text-center">
+					<h4>Open your zoom app and connect to your personnal room</h4>
+				</div>
+			</div>
+
+			<div class="row mt-5 justify-content-center">
+
+				<!-- ASSISTANT LIST -->
+				<div class="col-6 col-md-4 mb-3">
+					<div class="card w-100">
+						<div class="card-header">
+							Connected assistants · {{ Object.keys(assistants).length }}
+							<i class="fas fa-users"></i>
+						</div>
+						<ul class="list-group list-group-flush">
+							<li v-for="assistant in assistants" class="list-group-item text-capitalize" :key="assistant.id">
+								<span>
+									<span class="mr-2" :class="assistant.status == 'busy' ? 'text-danger' : 'text-success'">
+										<i class="fas fa-user"></i>
+									</span>
+									<!-- · -->
+									<span>
+										{{assistant.name}}
+									</span>
+								</span>
+							</li>
+						</ul>
+					</div>
+				</div>
+
+				<div class="col-6 col-md-4">
+					<div class="card w-100">
+						<div class="card-header">
+							Requests
+						</div>
+						<ul class="list-group list-group-flush">
+							<li v-for="request in queue" class="list-group-item text-capitalize" :key="assistant.id">
+								<span>
+									{{request.name}} - {{request.creation_date}} 
+								</span>
+							</li>
+							<li class="list-group-item">Not yet implemented :P</li>
+						</ul>
+					</div>
+				</div>
+
 			</div>
 		</div>
 		

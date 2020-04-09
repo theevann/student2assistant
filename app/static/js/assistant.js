@@ -8,20 +8,35 @@ var app = new Vue({
         logged_in: false,
         input_message: "",
         assistants: {},
+        queue: [],
     },
     methods: {
         start_update_stream: function (source) {
-            source.addEventListener("new_assistant", ({ data }) => {
-                let {assistant} =  JSON.parse(data);
-                this.assistants[assistant.id] = assistant;
+            source.addEventListener("initial_state", ({ data }) => {
+                console.log("INIT")
+                let {assistants} =  JSON.parse(data);
+                for (assistant of assistants) {
+                    this.$set(this.assistants, assistant.id, assistant);
+                }
             });
-            source.addEventListener("delete_assistant", ({ data }) => {
-                let {assistant} =  JSON.parse(data);
-                delete this.assistants[assistant.id];
+            source.addEventListener("new_assistant", ({ data }) => {
+                console.log("NEW")
+                let assistant = JSON.parse(data);
+                console.log(assistant)
+                this.$set(this.assistants, assistant.id, assistant);
+                console.log(this.assistants)
             });
             source.addEventListener("update_assistant", ({ data }) => {
-                let {assistant} =  JSON.parse(data);
-                this.assistants[assistant.id] = assistant;
+                console.log("UPDATE")
+                let assistant = JSON.parse(data);
+                console.log(this.assistants, assistant)
+                this.$set(this.assistants, assistant.id, assistant);
+            });
+            source.addEventListener("delete_assistant", ({ data }) => {
+                let assistant =  JSON.parse(data);
+                this.$delete(this.assistants, assistant.id);
+                console.log("DELETE")
+                console.log(this.assistants)
             });
             source.addEventListener("match_request", ({ data }) => {
                 let {callee_peer_id} =  JSON.parse(data);
@@ -31,10 +46,11 @@ var app = new Vue({
             // SET your own status...
         },
         check_login: function () {
-            $.get("/login", ({ is_authenticated, room, role, user_id }) => {
+            $.get("/login", ({ is_authenticated, room, role, peer_id }) => {
                 if (is_authenticated
                     && (room == this.room)
                     && (role == "assistant")
+                    && (peer_id == this.peer.id)
                     ) {
                     this.registered = true;
                     this.init_update_stream();
@@ -45,6 +61,9 @@ var app = new Vue({
             $.get("/logout", () => this.logged_in = false);
         },
         login: function () {
+            if (this.name == "")
+                return;
+
             this.register_on_server("assistant", this.password);
             this.password = "";
         },

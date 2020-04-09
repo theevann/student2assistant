@@ -33,7 +33,10 @@ class Request(db.Model):
             if (requested_user is None):
                 return # If no assistant available - no match
 
-            request = Request.query.filter_by(room=room, request="assistant").order_by(Request.creation_time).first()
+            request = Request.query.join(User) \
+                .filter(Request.room == room, Request.request == "assistant", User.connected == True) \
+                .order_by(Request.creation_time) \
+                .first()
             if (request is None):
                 return  # If there is no request
             elif (not request.caller.connected):

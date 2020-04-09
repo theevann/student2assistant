@@ -16,7 +16,8 @@ def get_login():
         "is_authenticated": current_user.is_authenticated,
         "room": current_user.room.name if current_user.is_authenticated else None,
         "role": current_user.role if current_user.is_authenticated else None,
-        "user_id": current_user.id if current_user.is_authenticated else None
+        "user_id": current_user.id if current_user.is_authenticated else None,
+        "peer_id": current_user.peer_id if current_user.is_authenticated else None
     })
 
 

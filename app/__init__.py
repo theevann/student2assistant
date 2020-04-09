@@ -1,3 +1,4 @@
+import socket
 import redis
 from flask import Flask
 from flask_migrate import Migrate
@@ -25,23 +26,21 @@ def create_app(env):
     models.init_app(app)
     auth.init_app(app)
 
-
-
+    # Remove all requests and users on reboot
     with app.app_context():
-        from werkzeug.security import generate_password_hash
-        from app.models import Room, db
-        # db.session.add(
-        #     Room(name="ee-334", password_hash=generate_password_hash("pass"))
-        # )
-        # db.session.add(
-        #     Room(name="test", password_hash=generate_password_hash(""))
-        # )
-        # db.session.commit()
+        models.User.query.delete()
+        models.Request.query.delete()
+        models.db.session.commit()
 
     return app
 
 
-app = create_app("dev")
+env = "prod" if socket.gethostname() == "importance-sampling" else "dev"
+app = create_app(env)
 migrate = Migrate(app, models.db)
+
+
+
+
 
 # boris.conforty@epfl.ch

@@ -8,7 +8,7 @@ from flask import request, jsonify, stream_with_context
 from flask_login import login_required, current_user
 
 from app.models import User, Room, Request
-from app.models import redis
+from app.models import db, redis
 
 
 stream_api = Blueprint('stream', __name__)
@@ -56,14 +56,15 @@ def pubsub_connector(func):
             current_user.set_connected(True)
             yield from func(pubsub, *args, **kwargs)
         finally:
-            print("Connection lost to {}".format(current_user.name))
+            # print("Connection lost to {}".format(current_user.name))
             current_user.set_connected(False)
             current_user.set_status("busy")  # TODO: if recconection -- change of status might be not visible in frontend 
             pubsub.close()
 
             sleep(15)
+            db.session.refresh(current_user)
             if not current_user.connected:
-                print("Deleting ", current_user.name)
+                # print("Deleting ", current_user.name)
                 current_user.delete()
 
     return wrapper_decorator
@@ -73,9 +74,11 @@ def pubsub_connector(func):
 @login_required
 def stream():
     if current_user.role == "student":
-        return Response(stream_with_context(stream_updates_for_student()), mimetype="text/event-stream")
+        response = Response(stream_with_context(stream_updates_for_student()), mimetype="text/event-stream")
     elif current_user.role == "assistant":
-        return Response(stream_with_context(stream_updates_for_assistant()), mimetype="text/event-stream")
+        response = Response(stream_with_context(stream_updates_for_assistant()), mimetype="text/event-stream")
+    response.headers["X-Accel-Buffering"] = "no"
+    return response
 
 
 @pubsub_connector
@@ -136,6 +139,19 @@ def stream_updates_for_assistant(pubsub):
 
     pubsub.psubscribe('{}.assistant.*'.format(room))
     pubsub.psubscribe('{}.queue.*'.format(room))
+
+
+    dump_data = json.dumps({
+        "assistants": list(map(lambda assistant: assistant.dict(), User.query.filter_by(role="assistant", room=current_user.room).all())),
+        "requests": [],
+    })
+    lines = [
+        "event:initial_state",
+        "data:{value}".format(value=dump_data)
+    ]
+    yield "\n".join(lines) + "\n\n"
+    # print(dump_data)
+
 
     while True:
         red_message = pubsub.get_message()

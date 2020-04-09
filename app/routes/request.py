@@ -20,14 +20,14 @@ def make_request():
     if call_request is None:
         call_request = Request.add(current_user, data)
 
-    Request.check_match_in_room(current_user.room)
-
-    call_request = Request.get_by_id(call_request.id)
-
-    return jsonify({
+    response = jsonify({
         "request_id": call_request and call_request.id,
         "index": call_request and call_request.rank
     })
+
+    Request.check_match_in_room(current_user.room)
+
+    return response
 
 
 @request_api.route('/request', methods=["DELETE"])
